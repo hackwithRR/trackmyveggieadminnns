@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trace-My-Veggie • Admin Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- QR -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<!-- Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+:root{
+  --green1:#2ecc71;
+  --green2:#27ae60;
+  --dark1:#0f2027;
+  --dark2:#203a43;
+  --dark3:#2c5364;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,sans-serif;
+  background:linear-gradient(120deg,var(--dark1),var(--dark2),var(--dark3));
+  background-size:400% 400%;
+  animation:bgFlow 14s ease infinite;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+
+@keyframes bgFlow{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.container{
+  width:100%;
+  max-width:1100px;
+  display:flex;
+  flex-direction:column;
+  gap:30px;
+}
+
+/* ===== ADMIN HEADER ===== */
+.admin-header{
+  text-align:center;
+  color:white;
+  margin-bottom:10px;
+  animation:fadeDown .8s ease;
+}
+.admin-header h1{
+  margin:0;
+  font-size:36px;
+  letter-spacing:.5px;
+  background:linear-gradient(45deg,#2ecc71,#27ae60);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.admin-header span{
+  display:block;
+  margin-top:6px;
+  font-size:14px;
+  opacity:.85;
+}
+
+@keyframes fadeDown{
+  from{opacity:0;transform:translateY(-20px)}
+  to{opacity:1;transform:none}
+}
+
+/* ===== GLASS CARD ===== */
+.card{
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(20px);
+  border-radius:28px;
+  padding:34px;
+  color:white;
+  box-shadow:0 25px 60px rgba(0,0,0,.45);
+  animation:cardUp .9s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes cardUp{
+  from{opacity:0;transform:translateY(40px) scale(.96)}
+  to{opacity:1;transform:none}
+}
+
+/* ===== FORM ===== */
+h2{
+  text-align:center;
+  margin-top:0;
+  margin-bottom:12px;
+  font-size:26px;
+  background:linear-gradient(45deg,#2ecc71,#27ae60);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.desc{
+  text-align:center;
+  font-size:14px;
+  opacity:.8;
+  margin-bottom:26px;
+}
+
+.field{margin-bottom:16px}
+
+input,select{
+  width:100%;
+  padding:16px;
+  border-radius:16px;
+  border:none;
+  background:rgba(255,255,255,.18);
+  color:white;
+  font-size:14px;
+  transition:.3s;
+}
+input::placeholder{color:rgba(255,255,255,.7)}
+input:focus,select:focus{
+  outline:none;
+  background:rgba(255,255,255,.25);
+  box-shadow:0 0 0 2px var(--green1);
+}
+
+/* ===== BUTTON ===== */
+button{
+  width:100%;
+  padding:18px;
+  border-radius:20px;
+  border:none;
+  background:linear-gradient(135deg,var(--green1),var(--green2));
+  font-size:16px;
+  font-weight:700;
+  color:#053b1f;
+  cursor:pointer;
+  transition:.35s;
+}
+button:hover{
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:0 20px 50px rgba(46,204,113,.45);
+}
+button.loading{
+  pointer-events:none;
+  filter:saturate(.7);
+}
+
+/* ===== SUCCESS ===== */
+#success{
+  margin-top:18px;
+  text-align:center;
+  font-weight:700;
+  color:#2ecc71;
+  opacity:0;
+  transform:scale(.85);
+  transition:.45s;
+}
+#success.show{
+  opacity:1;
+  transform:scale(1.05);
+}
+
+/* ===== QR SECTION ===== */
+#qrSection{
+  margin-top:34px;
+  padding:28px;
+  background:white;
+  border-radius:26px;
+  display:none;
+  animation:qrReveal .6s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes qrReveal{
+  0%{opacity:0;transform:translateY(30px) scale(.8)}
+  60%{transform:translateY(0) scale(1.1)}
+  100%{opacity:1;transform:scale(1)}
+}
+
+#qrTitle{
+  font-size:20px;
+  font-weight:700;
+  color:#2c3e50;
+  margin-bottom:8px;
+}
+#qrSub{
+  font-size:14px;
+  color:#555;
+  margin-bottom:18px;
+}
+
+.qr-download-btn{
+  margin-top:20px;
+  padding:14px 28px;
+  border:none;
+  border-radius:18px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  background: linear-gradient(135deg,#2ecc71,#27ae60);
+  color:#083b20;
+  box-shadow: 0 10px 25px rgba(46,204,113,0.35);
+  transition: all 0.35s ease;
+}
+
+.qr-download-btn:hover{
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 20px 45px rgba(46,204,113,0.55);
+}
+
+.qr-download-btn:active{
+  transform: scale(0.97);
+}
+
+/* QR ALIGNMENT */
+.qr-wrap{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+/* ===== DESKTOP LAYOUT ===== */
+@media(min-width:900px){
+  .container{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+  .card{flex:1;}
+  #qrSection{
+    flex:1;
+    margin-left:30px;
+  }
+  .qr-wrap{align-items:flex-start;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- ADMIN FORM CARD -->
+  <div class="card">
+
+    <h2>Vegetable Data Entry</h2>
+    <div class="desc">
+      Upload verified farm-to-fork data. Each record generates a unique QR code for consumers.
+    </div>
+
+    <div class="field"><input id="qrId" placeholder="Unique QR ID"></div>
+    <div class="field"><input id="type" placeholder="Crop Type"></div>
+    <div class="field"><input id="harvest" type="date"></div>
+
+    <div class="field">
+      <select id="chemical">
+        <option value="">Chemical-Free?</option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+    </div>
+
+    <div class="field"><input id="farmer" placeholder="Farmer Name"></div>
+    <div class="field"><input id="grown" placeholder="Where Grown"></div>
+    <div class="field"><input id="certification" placeholder="Certification / ROP"></div>
+    <div class="field"><input id="score" type="number" placeholder="Purity Score (%)"></div>
+
+    <button id="saveBtn" onclick="saveData()">Save & Generate QR</button>
+    <div id="success">✔ Data successfully saved to database</div>
+  </div>
+
+  <!-- QR DISPLAY CARD -->
+  <div id="qrSection">
+    <div id="qrTitle">Generated QR Code</div>
+    <div id="qrSub">Print or attach this QR to the vegetable batch</div>
+    <div class="qr-wrap">
+      <div id="qrcode"></div>
+      <button class="qr-download-btn" onclick="downloadQR()">⬇ Download QR Code</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig={
+  apiKey:"YOUR_API_KEY",
+  authDomain:"trace-my-veggie.firebaseapp.com",
+  databaseURL:"https://trace-my-veggie-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"trace-my-veggie"
+};
+
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+let qrInstance;
+let currentQRId = "";
+
+function saveData(){
+  const qrIdVal = document.getElementById("qrId").value.trim();
+  if(!qrIdVal){alert("QR ID required"); return;}
+  currentQRId = qrIdVal; // save for download filename
+
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.classList.add("loading");
+  saveBtn.innerText="Uploading…";
+
+  const data={
+    type:document.getElementById("type").value,
+    harvestDate:document.getElementById("harvest").value,
+    chemicalFree:document.getElementById("chemical").value,
+    farmer:document.getElementById("farmer").value,
+    whereGrown:document.getElementById("grown").value,
+    ropCertification:document.getElementById("certification").value,
+    purityScore:Number(document.getElementById("score").value)
+  };
+
+  db.ref("vegetables/"+qrIdVal).set(data).then(()=>{
+    document.getElementById("success").classList.add("show");
+    fireConfetti();
+    showQR(qrIdVal);
+    saveBtn.innerText="Uploaded ✔";
+    saveBtn.classList.remove("loading");
+  }).catch(()=>{
+    alert("Database error");
+    saveBtn.classList.remove("loading");
+    saveBtn.innerText="Save & Generate QR";
+  });
+}
+
+function fireConfetti(){
+  confetti({particleCount:200,spread:140,origin:{y:.6}});
+}
+
+function showQR(text){
+  const qrSection = document.getElementById("qrSection");
+  const qrcodeDiv = document.getElementById("qrcode");
+  qrSection.style.display="block";
+  qrcodeDiv.innerHTML="";
+  qrInstance = new QRCode(qrcodeDiv, { text, width:220, height:220 });
+  setTimeout(()=>qrSection.scrollIntoView({behavior:"smooth"}),300);
+}
+
+// ===== Download QR with white background & padding =====
+function downloadQR(){
+  if(!qrInstance){
+    alert("QR code not generated yet");
+    return;
+  }
+
+  const qrImg = document.querySelector("#qrcode img");
+  if(!qrImg){
+    alert("QR code image not ready");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  const size = 300; // total canvas size
+  const padding = 40; // white padding
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff"; // white background
+  ctx.fillRect(0, 0, size, size);
+
+  const img = new Image();
+  img.src = qrImg.src;
+  img.onload = function(){
+    const qrSize = size - padding*2;
+    ctx.drawImage(img, padding, padding, qrSize, qrSize);
+
+    const link = document.createElement("a");
+    link.download = `${currentQRId}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+}
+</script>
+
+</body>
+</html>
