@@ -298,7 +298,7 @@ const firebaseConfig={
   projectId:"trace-my-veggie"
 };
 
-if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 let qrInstance;
@@ -307,7 +307,7 @@ let currentQRId = "";
 function saveData(){
   const qrIdVal = document.getElementById("qrId").value.trim();
   if(!qrIdVal){alert("QR ID required"); return;}
-  currentQRId = qrIdVal; // save for download filename
+  currentQRId = qrIdVal;
 
   const saveBtn = document.getElementById("saveBtn");
   saveBtn.classList.add("loading");
@@ -363,25 +363,35 @@ function downloadQR(){
   }
 
   const canvas = document.createElement("canvas");
-  const size = 300; // total canvas size
-  const padding = 40; // white padding
+  const size = 300; // canvas size
+  const padding = 40; // white border
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#ffffff"; // white background
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, size, size);
 
   const img = new Image();
+  img.crossOrigin = "anonymous";
   img.src = qrImg.src;
   img.onload = function(){
     const qrSize = size - padding*2;
     ctx.drawImage(img, padding, padding, qrSize, qrSize);
 
+    const dataURL = canvas.toDataURL("image/png");
+
     const link = document.createElement("a");
     link.download = `${currentQRId}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
+    link.href = dataURL;
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if(isMobile){
+      window.open(dataURL, "_blank");
+      alert("Long press the image to save it on mobile.");
+    } else {
+      link.click();
+    }
   }
 }
 </script>
